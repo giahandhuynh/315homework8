@@ -1,0 +1,133 @@
+---
+title: "SDS Homework 8"
+author: "Daphne Huynh"
+date: "2025-04-10"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(fig.height=4, fig.width=7.5, fig.align = "center", warning=FALSE, tidy=TRUE, tidy.opts=list(width.cutoff=60), message=FALSE, echo = FALSE)
+```
+
+#### \href{https://github.com/giahandhuynh/315homework8}{\textcolor{blue}{GitHub Repository}}
+
+```{r}
+#libraries needed
+library(tidyverse)
+library(mosaic)
+library(ggplot2)
+```
+
+
+# 1.
+
+```{r results = 'hide'}
+creatinine <- read.csv("creatinine.csv")
+
+#regression model for the data
+lm(creatclear~age, data = creatinine)
+
+# part A calculation
+147.8129 - 0.6198*55
+
+# part C calculation
+fortyYOdiff = 135 - (147.8129 - 0.6198*40)
+sixtyYOdiff = 112 - (147.8129 - 0.6198*60)
+
+```
+## A.
+
+#### We would expect a 55-year-old to have a creatinine clearance rate of 113.724. This value was calculated by first fitting a regression model with age being a predictor of creatinine clearance rate, resulting in an equation of 147.813 - 0.620x where x is age. Plugging in 55 to the equation returns 147.813 - 0.620(55) = 113.724
+
+## B. 
+
+#### For every one additional year of age, creatine clearance rate declines by 0.62 mL/per minute. To determine this, I pulled the slope value from the same linear regression model calculated in part A, which was -0.62, implying a negative relationship between creatinine clearance rate and age.
+
+## C.
+
+#### The 40-year-old with a creatinine clearance rate of 135 has a higher rate for their age compared to a 60-year-old with a rate of 112. Both people have above expected rates, however the expected rate for a 40-year-old comes out to 147.8129 - 0.6198(40) = 123.021, and subtracting this from the observed value gives us 135 - 123.021 = 11.979. Repeating this for the 60-year-old, expected rate is 147.8129 - 0.6198(60) = 110.625, taken from the observed rate of 112 equals 1.375. Since the 40-year-old's difference is greater, they have the healthier rate for their age.
+
+\newpage
+
+# 2.
+
+```{r results = 'hide'}
+covid <- read.csv("covid.csv")
+
+italy_covid <- covid %>%
+  filter(country == "Italy")
+
+lm(log(deaths)~days_since_first_death, data = (italy_covid))
+
+italyBoot <- do(10000)*lm(log(deaths)~days_since_first_death, data = resample(italy_covid))
+confint(italyBoot, level = 0.95)
+
+dblEstimateItaly <- 70/(0.1832*100)
+
+italyRateBoot <- italyBoot %>%
+  select(days_since_first_death) %>%
+  mutate(dblrate = 70 / (days_since_first_death * 100)) %>%
+  select(dblrate)
+
+sdItaly <- sd(italyRateBoot$dblrate)
+meanItaly <- mean(italyRateBoot$dblrate)
+
+upperItaly <- meanItaly + 1.96*sdItaly
+lowerItaly <- meanItaly - 1.96*sdItaly
+```
+
+## A.
+
+#### The estimated growth rate for Italy is 0.183, but it can be said with 95% confidence that the true growth rate of deaths in Italy starting from the day of first death is somewhere between 0.159 and 0.209. Along with that, the estimated doubling rate is found by dividing 70 by our growth rate on a 0-100 scale, this gives us about 3.8 days. However, with 95% certainty the true doubling rate is between 3.3 and 4.4 days.
+
+```{r results = 'hide'}
+spain_covid <- covid %>%
+  filter(country == "Spain")
+
+lm(log(deaths)~days_since_first_death, data = (spain_covid))
+
+spainBoot <- do(10000)*lm(log(deaths)~days_since_first_death, data = resample(spain_covid))
+confint(spainBoot, level = 0.95)
+
+dblEstimateSpain <- 70/(0.276*100)
+
+spainRateBoot <- spainBoot %>%
+  select(days_since_first_death) %>%
+  mutate(dblrate = 70 / (days_since_first_death * 100)) %>%
+  select(dblrate)
+
+sdSpain <- sd(spainRateBoot$dblrate)
+meanSpain <- mean(spainRateBoot$dblrate)
+
+upperSpain <- meanSpain + 1.96*sdSpain
+lowerSpain <- meanSpain - 1.96*sdSpain
+
+```
+
+
+## B.
+
+#### The estimated growth rate for Spain is 0.276, but it can be said with 95% confidence that the true growth rate of deaths in Italy starting from the day of first death is somewhere between 0.233 and 0.317. The doubling rate for Spain is estimated to be 2.5 days, yet with 95% certainty the true doubling rate will be between 2.2 and 2.9 days.
+
+## C.
+
+```{r}
+color = c('plum4', 'purple4')
+color_map <- setNames(color, c("Italy", "Spain"))
+ggplot(covid) + geom_line(aes(x = days_since_first_death, y = deaths, color = country)) +scale_color_manual(values = color_map)
+```
+
+\newpage
+
+# 3.
+
+```{r results = 'hide'}
+milk <- read.csv("milk.csv")
+
+lm(log(sales)~log(price), data = milk)
+
+milkBoot <- do(10000)*lm(log(sales)~log(price), data = resample(milk))
+confint(milkBoot)
+```
+#### The estimate for price elasticity of demand for milk from this data is -1.619, suggesting that consumers demand for milk is elastic, or price sensitive. With 95% certainty, the true price elasticity of demand for milk is between -1.771 and -1.456, still showing elastic demand. To estimate the elasticity, I converted the economist's power law model to a linear model by taking the log() of the entire equation, making the log(y) a linear function of log(x). The slope of log(x) then tells us the elasticity.
+
